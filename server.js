@@ -10,9 +10,9 @@ app.use(express.json());
 const pool = new Pool(
     {
         user: 'postgres',
-        password: 'b00tcamp2024',
+        password: 'B00tcamp2024',
         host: 'localhost',
-        database: 'employees_db'
+        database: 'employee_db'
     },
     console.log('Connected to the employees database')
 )
