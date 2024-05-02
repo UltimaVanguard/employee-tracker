@@ -1,5 +1,6 @@
 const express = require('express')
 const { Pool } = require('pg');
+const CLI = require('./lib/cli.js');
 
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -18,3 +19,15 @@ const pool = new Pool(
 )
 
 pool.connect();
+
+app.use((req, res) => {
+    res.status(404).end();
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+const cli = new CLI();
+
+cli.run();
