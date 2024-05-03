@@ -51,29 +51,13 @@ function viewEmployees() {
                `CONCAT(manager.first_name, ' ', manager.last_name) AS manager ` +
                'FROM employee employee LEFT JOIN employee manager ON employee.manager_id = manager.id ' +
                'INNER JOIN role ON employee.role_id = role.id INNER JOIN department ON role.department_id = department.id' , async function(err, { rows }) {
-                await console.log('');
-        await console.log('  ID        Name                            Title                Salary        Department                  Manager');
-        await console.log(' ---- -------------------                 --------              --------      -------------           ------------------');
-        await rows.forEach(element => {
-            // if (element.manager === '') {
-            //     console.log('hello')
-            //     element.manager = 'null'
-            // };
-            const displayId = element.id + " ".repeat(5-element.id.length);
-            const displayEmpName = element.emp_name + " ".repeat(30-element.emp_name.length);
-            const displayTitle = element.title + " ".repeat(20-element.title.length);
-            const displaySalary = element.salary + " ".repeat(10-element.salary.length);
-            const displayName = element.name + " ".repeat(20-element.name.length);
-            const displayManager = element.manager + " ".repeat(30-element.manager.length);
-            console.log(`  ${displayId}   ${displayEmpName}    ${displayTitle}     ${displaySalary}     ${displayName}     ${displayManager}`);
+                await console.table(rows)
+                return run();
         })
-        await console.log('');
-        return run();
-    })
 };
 
-async function addEmployee() {
-    await inquirer
+function addEmployee() {
+    inquirer
         .prompt([
         {
             type: 'input',
@@ -89,9 +73,12 @@ async function addEmployee() {
             type: 'list',
             name: 'role',
             message: `What is the employee's role?`,
-            choices: await roleChoices(),
+            choices: roleChoices(),
         },
     ])
+    .then(({ firstName, lastName, role, department }) => {
+
+    })
     return run();
 };
 
@@ -102,13 +89,7 @@ function updateRole() {
 function viewRoles() {
     pool.query('SELECT role.id, role.title, role.salary, department.name FROM role INNER JOIN department ON role.department_id = department.id ORDER BY role.title',
                 async function(err, {rows}) {
-        await console.log('');
-        await console.log('   ID   Title     Salary    Department');
-        await console.log('   ---  --------  --------  ------------');
-        rows.forEach(element => {
-            console.log(`    ${element.id}    ${element.title}     ${element.salary}     ${element.name}`)
-        })
-        await console.log('');
+        await console.table(rows);
         return run();
     })
 };
@@ -119,19 +100,13 @@ function addRole() {
 
 function viewDepartments() {
     pool.query('SELECT * FROM department ORDER BY name', async function(err, {rows}) {
-        await console.log('');
-        await console.log('   ID   Name');
-        await console.log('   ---  ------------');
-        await rows.forEach(element => {
-            console.log(`    ${element.id}    ${element.name}`)
-        });
-        await console.log('');
+        await console.table(rows)
         return run();
     });
 };
 
-async function addDepartment() {
-    await inquirer
+function addDepartment() {
+    inquirer
         .prompt([
         {
             type: 'input',
@@ -139,17 +114,19 @@ async function addDepartment() {
             message: `What is the department name?`,
         },
     ])
-    await pool.query('INSERT INTO department (name) VALUES ($1)', [this.department], (err, { rows }) => {
-        if (err) {
-            console.log(err.message);
-            return
-        } else {
-            console.log('');
-            console.log(`${department} sucessfully added!`);
+    .then(({ department }) => {
+        pool.query('INSERT INTO department (name) VALUES ($1)', [department], async (err) => {
+            if (err) {
+                await console.log(err.message);
+                return
+            } else {
+                await console.log('');
+                await console.log(`${department} sucessfully added!`);
+                return run();
+            }
         }
-    })
-    return run();
-};
+    )}
+)};
 
 function run() {
     inquirer
