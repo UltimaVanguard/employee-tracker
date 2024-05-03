@@ -1,3 +1,7 @@
+let roles = [];
+let departments = [];
+let managers = [];
+
 const inquirer = require('inquirer');
 const express = require('express')
 const { Pool } = require('pg');
@@ -33,14 +37,61 @@ app.listen(PORT, () => {
 
 // cli.run();
 
-function viewEmployees() {
-    pool.query('SELECT * FROM employee ORDER BY first_name, last_name', function(err, {rows}) {
-        console.log(rows)
+
+function roleChoices() {
+    pool.query('SELECT title AS name FROM role, id AS value', async function(err, {rows}) {
+        roles = rows
+        await console.log(roles)
     })
-    return run();
+    return roles;
 };
 
-function addEmployee() {
+function viewEmployees() {
+    pool.query(`SELECT employee.id, CONCAT(employee.first_name, ' ', employee.last_name) AS emp_name, role.title, role.salary, department.name, ` +
+               `CONCAT(manager.first_name, ' ', manager.last_name) AS manager ` +
+               'FROM employee employee LEFT JOIN employee manager ON employee.manager_id = manager.id ' +
+               'INNER JOIN role ON employee.role_id = role.id INNER JOIN department ON role.department_id = department.id' , async function(err, { rows }) {
+                await console.log('');
+        await console.log('  ID        Name                            Title                Salary        Department                  Manager');
+        await console.log(' ---- -------------------                 --------              --------      -------------           ------------------');
+        await rows.forEach(element => {
+            // if (element.manager === '') {
+            //     console.log('hello')
+            //     element.manager = 'null'
+            // };
+            const displayId = element.id + " ".repeat(5-element.id.length);
+            const displayEmpName = element.emp_name + " ".repeat(30-element.emp_name.length);
+            const displayTitle = element.title + " ".repeat(20-element.title.length);
+            const displaySalary = element.salary + " ".repeat(10-element.salary.length);
+            const displayName = element.name + " ".repeat(20-element.name.length);
+            const displayManager = element.manager + " ".repeat(30-element.manager.length);
+            console.log(`  ${displayId}   ${displayEmpName}    ${displayTitle}     ${displaySalary}     ${displayName}     ${displayManager}`);
+        })
+        await console.log('');
+        return run();
+    })
+};
+
+async function addEmployee() {
+    await inquirer
+        .prompt([
+        {
+            type: 'input',
+            name: 'firstName',
+            message: `What is the employee's first name?`,
+        },
+        {
+            type: 'input',
+            name: 'lastName',
+            message: `What is the employee's last name?`,
+        },
+        {
+            type: 'list',
+            name: 'role',
+            message: `What is the employee's role?`,
+            choices: await roleChoices(),
+        },
+    ])
     return run();
 };
 
@@ -49,10 +100,17 @@ function updateRole() {
 };
 
 function viewRoles() {
-    pool.query('SELECT * FROM role ORDER BY title', function(err, {rows}) {
-        console.log(rows)
+    pool.query('SELECT role.id, role.title, role.salary, department.name FROM role INNER JOIN department ON role.department_id = department.id ORDER BY role.title',
+                async function(err, {rows}) {
+        await console.log('');
+        await console.log('   ID   Title     Salary    Department');
+        await console.log('   ---  --------  --------  ------------');
+        rows.forEach(element => {
+            console.log(`    ${element.id}    ${element.title}     ${element.salary}     ${element.name}`)
+        })
+        await console.log('');
+        return run();
     })
-    return run();
 };
 
 function addRole() {
@@ -61,17 +119,40 @@ function addRole() {
 
 function viewDepartments() {
     pool.query('SELECT * FROM department ORDER BY name', async function(err, {rows}) {
-        console.log(rows)
+        await console.log('');
+        await console.log('   ID   Name');
+        await console.log('   ---  ------------');
+        await rows.forEach(element => {
+            console.log(`    ${element.id}    ${element.name}`)
+        });
+        await console.log('');
         return run();
-    })
+    });
 };
 
-function addDepartment() {
+async function addDepartment() {
+    await inquirer
+        .prompt([
+        {
+            type: 'input',
+            name: 'department',
+            message: `What is the department name?`,
+        },
+    ])
+    await pool.query('INSERT INTO department (name) VALUES ($1)', [this.department], (err, { rows }) => {
+        if (err) {
+            console.log(err.message);
+            return
+        } else {
+            console.log('');
+            console.log(`${department} sucessfully added!`);
+        }
+    })
     return run();
 };
 
 function run() {
-    return inquirer
+    inquirer
         .prompt([
         {
             type: 'list',
@@ -100,8 +181,8 @@ function run() {
                     addRole();
                     break;
                 case 'View All Departments':
-                        viewDepartments();
-                        break;
+                    viewDepartments();
+                    break;
                 case 'Add Department':
                     addDepartment();
                     break;
