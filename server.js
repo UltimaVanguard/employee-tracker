@@ -241,6 +241,7 @@ function run() {
                     addDepartment();
                     break;
                 default:
+                    console.log('Goodbye!');
                     return;
                     break;
                 };
