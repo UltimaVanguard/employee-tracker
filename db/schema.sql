@@ -1,11 +1,14 @@
+-- Creates Database
 DROP DATABASE employee_db IF EXISTS
 CREATE DATABASE employee_db
 
+-- Creates Department Table
 CREATE TABLE department (
     id SERIAL PRIMARY KEY,
     name VARCHAR(30) UNIQUE NOT NULL
 );
 
+-- Creates Role Table
 CREATE TABLE role (
     id SERIAL PRIMARY KEY,
     title VARCHAR(30) UNIQUE NOT NULL,
@@ -17,6 +20,7 @@ CREATE TABLE role (
 
 );
 
+-- Creates Employee Table
 CREATE TABLE employee (
     id SERIAL PRIMARY KEY,
     first_name VARCHAR(30) NOT NULL,

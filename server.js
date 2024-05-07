@@ -10,6 +10,7 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
+// creates connection to database
 const pool = new Pool(
     {
         user: 'postgres',
@@ -30,6 +31,7 @@ app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
+// Function to view all employees
 function viewEmployees() {
     pool.query(`SELECT employee.id, CONCAT(employee.first_name, ' ', employee.last_name) AS emp_name, role.title, role.salary, department.name, ` +
                `CONCAT(manager.first_name, ' ', manager.last_name) AS manager ` +
@@ -41,9 +43,12 @@ function viewEmployees() {
         })
 };
 
+// Function to add employee
 function addEmployee() {
+    // Pulls back data to use in inquirer choices
     pool.query('SELECT title AS name, id AS value FROM role', async function(err, {rows}) {
         const roles = rows
+        // Pulls back data to use in inquirer choices
         await pool.query(`SELECT CONCAT(first_name, ' ', last_name) AS name,` +
                          'id AS value FROM employee WHERE role_id IN (1,2,3)', async function(err, {rows}) {
             const managers = rows;
@@ -73,6 +78,7 @@ function addEmployee() {
                         choices: managers,
                     },
                 ])
+                // Inserts into employee database
                 .then(({ firstName, lastName, role, manager }) => {
                     pool.query('INSERT INTO employee (first_name, last_name, role_id, manager_id)' +
                                'VALUES ($1, $2, $3, $4)', [firstName, lastName, role, manager], async (err) => {
@@ -90,7 +96,9 @@ function addEmployee() {
     })
 };
 
+// Updates employee role
 function updateRole() {
+    // Pulls back data to use in inquirer choices
     pool.query(`SELECT CONCAT(first_name, ' ', last_name) AS name, ` +
                'id AS value FROM employee', async function(err, {rows}) {
         const employees = rows
@@ -111,6 +119,7 @@ function updateRole() {
                         choices: roles
                     },
                 ])
+                // Updates employee database
                 .then(({ employee, role }) => {
                     pool.query('UPDATE employee ' +
                                'SET role_id = $1 ' +
@@ -129,6 +138,7 @@ function updateRole() {
     })
 };
 
+// Function to view all roles
 function viewRoles() {
     pool.query('SELECT role.id, role.title, role.salary, department.name FROM role INNER JOIN department ON role.department_id = department.id ORDER BY role.title',
                 async function(err, {rows}) {
@@ -137,7 +147,9 @@ function viewRoles() {
     })
 };
 
+// Function to add role
 function addRole() {
+    // Pulls back data to use in inquirer choices
     pool.query('SELECT name, id AS value FROM department', async function(err, {rows}) {
         const departments = rows
         await inquirer
@@ -159,6 +171,7 @@ function addRole() {
                     choices: departments,
                 },
             ])
+            // Inserts into role database
             .then(({ title, salary, department }) => {
                 pool.query('INSERT INTO role (title, salary, department_id)' +
                            'VALUES ($1, $2, $3)', [title, salary, department], async (err) => {
@@ -175,6 +188,7 @@ function addRole() {
     })
 };
 
+// Function to view all departments
 function viewDepartments() {
     pool.query('SELECT * FROM department ORDER BY name', async function(err, {rows}) {
         await console.table(rows)
@@ -182,6 +196,7 @@ function viewDepartments() {
     });
 };
 
+// Function to add department
 function addDepartment() {
     inquirer
         .prompt([
@@ -191,6 +206,7 @@ function addDepartment() {
             message: `What is the department name?`,
         },
     ])
+    // Inserts into department database
     .then(({ department }) => {
         pool.query('INSERT INTO department (name) VALUES ($1)', [department], async (err) => {
             if (err) {
@@ -205,6 +221,7 @@ function addDepartment() {
     )}
 )};
 
+// Initial inquirer prompt
 function run() {
     inquirer
         .prompt([
@@ -217,6 +234,7 @@ function run() {
                     'Quit'],
             }
         ])
+        // Switch-case statement to determine what to run
         .then(({ todo }) => {
             switch (todo) {
                 case 'View All Employees':
