@@ -1,11 +1,8 @@
-let roles = [];
-let departments = [];
-let managers = [];
-
 const inquirer = require('inquirer');
 const express = require('express')
 const { Pool } = require('pg');
-const CLI = require('./lib/cli.js');
+// const CLI = require('./lib/cli.js');
+// const cli = new CLI();
 
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -33,10 +30,6 @@ app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
-// const cli = new CLI();
-
-// cli.run();
-
 function viewEmployees() {
     pool.query(`SELECT employee.id, CONCAT(employee.first_name, ' ', employee.last_name) AS emp_name, role.title, role.salary, department.name, ` +
                `CONCAT(manager.first_name, ' ', manager.last_name) AS manager ` +
@@ -53,7 +46,8 @@ function addEmployee() {
         const roles = rows
         await pool.query(`SELECT CONCAT(first_name, ' ', last_name) AS name,` +
                          'id AS value FROM employee WHERE role_id IN (1,2,3)', async function(err, {rows}) {
-            const managers = rows
+            const managers = rows;
+            managers.unshift({name: 'None', value: null});
             await inquirer
                 .prompt([
                     {
@@ -97,7 +91,42 @@ function addEmployee() {
 };
 
 function updateRole() {
-    return run();
+    pool.query(`SELECT CONCAT(first_name, ' ', last_name) AS name, ` +
+               'id AS value FROM employee', async function(err, {rows}) {
+        const employees = rows
+        await pool.query('SELECT title AS name, id AS value FROM role', async function(err, {rows}) {
+            const roles = rows
+            await inquirer
+                .prompt([
+                    {
+                        type: 'list',
+                        name: 'employee',
+                        message: `What employee do you want to update?`,
+                        choices: employees,
+                    },
+                    {
+                        type: 'list',
+                        name: 'role',
+                        message: `What is their new role?`,
+                        choices: roles
+                    },
+                ])
+                .then(({ employee, role }) => {
+                    pool.query('UPDATE employee ' +
+                               'SET role_id = $1 ' +
+                               'WHERE id = $2', [role, employee], async (err) => {
+                        if (err) {
+                            await console.log(err.message);
+                            return
+                        } else {
+                            await console.log('');
+                            await console.log(`Employee successfully updated`);
+                            return run();
+                        }
+                    });
+                })
+        })
+    })
 };
 
 function viewRoles() {
