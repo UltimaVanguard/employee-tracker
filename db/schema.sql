@@ -1,5 +1,5 @@
 -- Creates Database
-DROP DATABASE employee_db IF EXISTS
+DROP DATABASE IF EXISTS employee_db
 CREATE DATABASE employee_db
 
 -- Creates Department Table
